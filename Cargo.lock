@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "advent-of-rust"
+name = "advent_of_rust"
 version = "0.1.0"

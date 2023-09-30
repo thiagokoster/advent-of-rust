@@ -1,8 +1,15 @@
 [package]
-name = "advent-of-rust"
+name = "advent_of_rust"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "advent_of_rust"
+path = "src/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "advent_of_rust"
+path = "src/lib.rs"
 
 [dependencies]
