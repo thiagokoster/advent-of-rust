@@ -7,16 +7,15 @@ pub mod day02 {
         fn part_1(&self, input: &str) -> u32 {
             let mut total_score: u32 = 0;
             let path = "src/year2022/day02/".to_owned() + input;
-            if let Ok(lines) = get_lines(&path) {
-                for line in lines {
-                    if let Ok(content) = line {
-                        let moves_code = content.split_once(' ').unwrap();
-                        let opponent = Move::from_str(moves_code.0);
-                        let me = Move::from_str(moves_code.1);
-                        let result = round(me, opponent);
-                        let score = result.score(me);
-                        total_score += score;
-                    }
+            let lines = get_lines(&path);
+            for line in lines {
+                if let Ok(content) = line {
+                    let moves_code = content.split_once(' ').unwrap();
+                    let opponent = Move::from_str(moves_code.0);
+                    let me = Move::from_str(moves_code.1);
+                    let result = round(me, opponent);
+                    let score = result.score(me);
+                    total_score += score;
                 }
             }
 
@@ -26,20 +25,19 @@ pub mod day02 {
         fn part_2(&self, input: &str) -> u32 {
             let mut total_score: u32 = 0;
             let path = "src/year2022/day02/".to_owned() + input;
-            if let Ok(lines) = get_lines(&path) {
-                for line in lines {
-                    if let Ok(content) = line {
-                        let moves_code = content.split_once(' ').unwrap();
-                        let opponent = Move::from_str(moves_code.0);
-                        let outcome = Outcome::from_str(moves_code.1);
-                        let me = match outcome {
-                            Outcome::Lost => opponent.derive(false),
-                            Outcome::Draw => opponent,
-                            Outcome::Won => opponent.derive(true)
-                        };
-                        let score = outcome.score(me);
-                        total_score += score;
-                    }
+            let lines = get_lines(&path);
+            for line in lines {
+                if let Ok(content) = line {
+                    let moves_code = content.split_once(' ').unwrap();
+                    let opponent = Move::from_str(moves_code.0);
+                    let outcome = Outcome::from_str(moves_code.1);
+                    let me = match outcome {
+                        Outcome::Lost => opponent.derive(false),
+                        Outcome::Draw => opponent,
+                        Outcome::Won => opponent.derive(true),
+                    };
+                    let score = outcome.score(me);
+                    total_score += score;
                 }
             }
 
@@ -81,7 +79,7 @@ pub mod day02 {
                 0 => Move::Rock,
                 1 => Move::Paper,
                 2 => Move::Scissors,
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
 
@@ -108,7 +106,7 @@ pub mod day02 {
                 "X" => Outcome::Lost,
                 "Y" => Outcome::Draw,
                 "Z" => Outcome::Won,
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
     }

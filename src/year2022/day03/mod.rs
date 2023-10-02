@@ -1,15 +1,15 @@
 pub mod day03 {
 
-    use std::{io, collections::HashSet};
     use crate::day::Solution;
     use advent_of_rust::get_lines;
+    use std::{collections::HashSet, io};
     pub struct Day03;
 
     impl Day03 {
         pub fn find_duplicated(comp_1: &str, comp_2: &str) -> String {
             let first = HashSet::<char>::from_iter(comp_1.chars());
             let second = HashSet::<char>::from_iter(comp_2.chars());
-            
+
             return first.intersection(&second).into_iter().collect();
         }
 
@@ -19,7 +19,7 @@ pub mod day03 {
             return Day03::find_duplicated(&rucksack2, &item)
                 .chars()
                 .next()
-                .expect("Should have only one badge")
+                .expect("Should have only one badge");
         }
 
         pub fn priority(item: char) -> Option<u32> {
@@ -46,13 +46,13 @@ pub mod day03 {
         fn part_1(&self, input: &str) -> u32 {
             let mut total_priority = 0;
             let path = "src/year2022/day03/".to_owned() + input;
-            if let Ok(lines) = get_lines(&path) {
-                for line in lines {
-                    if let Ok(content) = line {
-                        let compartments = content.split_at(content.len() / 2);
-                        let duplicated_item = Day03::find_duplicated(&compartments.0, &compartments.1);
-                        total_priority += Day03::priority(duplicated_item.chars().next().unwrap()).unwrap_or(0);
-                    }
+            let lines = get_lines(&path);
+            for line in lines {
+                if let Ok(content) = line {
+                    let compartments = content.split_at(content.len() / 2);
+                    let duplicated_item = Day03::find_duplicated(&compartments.0, &compartments.1);
+                    total_priority +=
+                        Day03::priority(duplicated_item.chars().next().unwrap()).unwrap_or(0);
                 }
             }
             return total_priority;
@@ -61,16 +61,16 @@ pub mod day03 {
         fn part_2(&self, input: &str) -> u32 {
             let mut total_priority = 0;
             let path = "src/year2022/day03/".to_owned() + input;
-            if let Ok(mut lines) = get_lines(&path) {
-                while let Some(line) = lines.next() {
-                    let elf0 = Day03::get_elf(Some(line));
-                    let elf1 = Day03::get_elf(lines.next());
-                    let elf2 = Day03::get_elf(lines.next());
+            let mut lines = get_lines(&path);
+            while let Some(line) = lines.next() {
+                let elf0 = Day03::get_elf(Some(line));
+                let elf1 = Day03::get_elf(lines.next());
+                let elf2 = Day03::get_elf(lines.next());
 
-                    let badge = Day03::find_badge(&elf0, &elf1, &elf2);
-                    total_priority += Day03::priority(badge).unwrap_or(0);
-                }
+                let badge = Day03::find_badge(&elf0, &elf1, &elf2);
+                total_priority += Day03::priority(badge).unwrap_or(0);
             }
+
             return total_priority;
         }
     }
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn test_find_duplicated() {
         let rucksack = "vJrwpWtwJgWrhcsFMMfFFhFp";
-        let comps = rucksack.split_at(rucksack.len()/2);
+        let comps = rucksack.split_at(rucksack.len() / 2);
         let duplicated_item = Day03::find_duplicated(comps.0, comps.1);
         assert_eq!('p', duplicated_item.chars().next().unwrap());
     }

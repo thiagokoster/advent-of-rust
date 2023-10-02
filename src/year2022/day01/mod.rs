@@ -23,18 +23,18 @@ pub mod day01 {
     fn map_calories(elves: &mut Vec<u32>, input: &str) {
         let mut i = 0;
         let path = "src/year2022/day01/".to_owned() + input;
-        if let Ok(lines) = get_lines(&path) {
-            for line in lines {
-                if let Ok(content) = line {
-                    if let Ok(calories) = content.parse::<u32>() {
-                        elves[i] += calories;
-                    } else {
-                        i += 1;
-                        elves.push(0);
-                    }
+        let lines = get_lines(&path);
+        for line in lines {
+            if let Ok(content) = line {
+                if let Ok(calories) = content.parse::<u32>() {
+                    elves[i] += calories;
+                } else {
+                    i += 1;
+                    elves.push(0);
                 }
             }
         }
+
         elves.sort_by(|a, b| b.cmp(a));
     }
 }
