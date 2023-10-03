@@ -13,3 +13,4 @@ name = "advent_of_rust"
 path = "src/lib.rs"
 
 [dependencies]
+regex = "1.9.6"
