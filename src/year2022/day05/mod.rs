@@ -1,28 +1,43 @@
 pub mod day05 {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, VecDeque};
 
     use advent_of_rust::get_lines;
 
     use crate::day::Solution;
     use regex::Regex;
 
-    //TODO: part_1 and part_2 needs to be String
     pub struct Day05;
     impl Solution for Day05 {
-        fn part_1(&self, input: &str) -> u32 {
+        fn part_1(&self, input: &str) -> String {
+            let mut output = String::new();
             let path = "src/year2022/day05/".to_owned() + input;
-            let (stacks, commands) = parse_input(&path);
+            let (mut stacks, commands) = parse_input(&path);
 
-            for stack in stacks {
-                println!("{:?}", stack);
+            for command in commands {
+                command.move_crate(&mut stacks)
             }
-            //TODO: Get dictionary keys in order OR check the size of the stacks list first and
-            //create an vector for it. (maybe this is better)
-            return 0;
+
+            for i in 1..=stacks.keys().len() {
+                output.push_str(stacks.get(&i).unwrap().last().unwrap());
+            }
+
+            return output.to_string();
         }
 
-        fn part_2(&self, input: &str) -> u32 {
-            return 0;
+        fn part_2(&self, input: &str) -> String {
+            let mut output = String::new();
+            let path = "src/year2022/day05/".to_owned() + input;
+            let (mut stacks, commands) = parse_input(&path);
+
+            for command in commands {
+                command.move_crate_9001(&mut stacks)
+            }
+
+            for i in 1..=stacks.keys().len() {
+                output.push_str(stacks.get(&i).unwrap().last().unwrap());
+            }
+
+            return output.to_string();
         }
     }
 
@@ -48,7 +63,7 @@ pub mod day05 {
             } else {
                 // parse commands
                 if let Some(command) = Command::from_str(line) {
-                    command.move_crate(&mut stacks);
+                    commands.push(command);
                 }
             }
         }
@@ -95,13 +110,23 @@ pub mod day05 {
 
         fn move_crate(&self, stacks: &mut HashMap<usize, Vec<String>>) {
             for _ in 0..self.times {
-                println!("from: {}, to: {}", self.from, self.to);
                 let get = stacks.get_mut(&self.from).unwrap().pop().unwrap();
                 stacks.entry(self.to).and_modify(|f| f.push(get));
+            }
+        }
 
-                for stack in &mut *stacks {
-                    println!("{:?}", stack);
-                }
+        fn move_crate_9001(&self, stacks: &mut HashMap<usize, Vec<String>>) {
+            let mut pick: VecDeque<String> = VecDeque::new();
+
+            for _ in 0..self.times {
+                let get = stacks.get_mut(&self.from).unwrap().pop().unwrap();
+                pick.push_back(get);
+            }
+
+            while !pick.is_empty() {
+                stacks
+                    .entry(self.to)
+                    .and_modify(|f| f.push(pick.pop_back().unwrap()));
             }
         }
     }
@@ -114,5 +139,12 @@ mod tests {
     #[test]
     fn test_part_1() {
         let result = Day05.part_1("example.txt");
+        assert_eq!(result, "CMZ");
+    }
+
+    #[test]
+    fn test_part_2() {
+        let result = Day05.part_2("example.txt");
+        assert_eq!(result, "MCD");
     }
 }

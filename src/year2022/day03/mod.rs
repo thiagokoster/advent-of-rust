@@ -43,7 +43,7 @@ pub mod day03 {
     }
 
     impl Solution for Day03 {
-        fn part_1(&self, input: &str) -> u32 {
+        fn part_1(&self, input: &str) -> String {
             let mut total_priority = 0;
             let path = "src/year2022/day03/".to_owned() + input;
             let lines = get_lines(&path);
@@ -55,10 +55,10 @@ pub mod day03 {
                         Day03::priority(duplicated_item.chars().next().unwrap()).unwrap_or(0);
                 }
             }
-            return total_priority;
+            return total_priority.to_string();
         }
 
-        fn part_2(&self, input: &str) -> u32 {
+        fn part_2(&self, input: &str) -> String {
             let mut total_priority = 0;
             let path = "src/year2022/day03/".to_owned() + input;
             let mut lines = get_lines(&path);
@@ -71,7 +71,7 @@ pub mod day03 {
                 total_priority += Day03::priority(badge).unwrap_or(0);
             }
 
-            return total_priority;
+            return total_priority.to_string();
         }
     }
 }
@@ -82,12 +82,12 @@ mod tests {
 
     #[test]
     fn test_part_1() {
-        assert_eq!(Day03.part_1("example.txt"), 157);
+        assert_eq!(Day03.part_1("example.txt"), "157");
     }
 
     #[test]
     fn test_part_2() {
-        assert_eq!(Day03.part_2("example.txt"), 70);
+        assert_eq!(Day03.part_2("example.txt"), "70");
     }
 
     #[test]

@@ -4,7 +4,7 @@ pub mod day02 {
     pub struct Day02;
 
     impl Solution for Day02 {
-        fn part_1(&self, input: &str) -> u32 {
+        fn part_1(&self, input: &str) -> String {
             let mut total_score: u32 = 0;
             let path = "src/year2022/day02/".to_owned() + input;
             let lines = get_lines(&path);
@@ -19,10 +19,10 @@ pub mod day02 {
                 }
             }
 
-            return total_score;
+            return total_score.to_string();
         }
 
-        fn part_2(&self, input: &str) -> u32 {
+        fn part_2(&self, input: &str) -> String {
             let mut total_score: u32 = 0;
             let path = "src/year2022/day02/".to_owned() + input;
             let lines = get_lines(&path);
@@ -41,7 +41,7 @@ pub mod day02 {
                 }
             }
 
-            return total_score;
+            return total_score.to_string();
         }
     }
 
@@ -120,12 +120,12 @@ mod tests {
 
     #[test]
     fn test_part_1() {
-        assert_eq!(Day02.part_1("example.txt"), 15);
+        assert_eq!(Day02.part_1("example.txt"), "15");
     }
 
     #[test]
     fn test_part_2() {
-        assert_eq!(Day02.part_2("example.txt"), 12);
+        assert_eq!(Day02.part_2("example.txt"), "12");
     }
 
     #[test]

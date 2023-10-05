@@ -4,19 +4,19 @@ pub mod day01 {
     pub struct Day01;
 
     impl Solution for Day01 {
-        fn part_1(&self, input: &str) -> u32 {
+        fn part_1(&self, input: &str) -> String {
             let mut elves: Vec<u32> = Vec::new();
             elves.push(0);
             map_calories(&mut elves, input);
 
-            return elves[0];
+            return elves[0].to_string();
         }
-        fn part_2(&self, input: &str) -> u32 {
+        fn part_2(&self, input: &str) -> String {
             let mut elves: Vec<u32> = Vec::new();
             elves.push(0);
             map_calories(&mut elves, input);
 
-            return elves[0] + elves[1] + elves[2];
+            return (elves[0] + elves[1] + elves[2]).to_string();
         }
     }
 
@@ -49,6 +49,6 @@ mod tests {
         let day = Day01 {};
         let result = day.part_1("example.txt");
         println!("Hello, day 01!");
-        assert_eq!(result, 24000);
+        assert_eq!(result, "24000");
     }
 }
