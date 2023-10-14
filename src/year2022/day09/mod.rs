@@ -1,6 +1,6 @@
 pub mod day09 {
 
-    use std::collections::HashSet;
+    use std::{borrow::BorrowMut, cell::RefCell, collections::HashSet, ops::Deref, rc::Rc};
 
     use advent_of_rust::get_lines;
 
@@ -10,45 +10,64 @@ pub mod day09 {
     pub const BASEPATH: &str = "src/year2022/day09/";
     impl Solution for Day09 {
         fn part_1(&self, input: &str) -> String {
-            let path = BASEPATH.to_owned() + input;
-            let mut iter = get_lines(&path);
-
             let tail = Node::default();
             let mut head = Node::default();
             head.add_tail(tail);
 
-            while let Some(line) = iter.next() {
-                let content = line.expect("Should be able to read line");
-                let (direction, times) = content
-                    .split_once(" ")
-                    .expect("String should have one whitespace");
-                let times = times.parse::<u32>().expect("should be able to parse");
-                head.update(direction, times);
-            }
+            update_head(input, &mut head);
 
             return head.print();
         }
 
         fn part_2(&self, input: &str) -> String {
-            return "0".to_string();
+            let mut head = Node::default();
+            head.add_tail(Node::default());
+            head.add_tail(Node::default());
+            head.add_tail(Node::default());
+            head.add_tail(Node::default());
+            head.add_tail(Node::default());
+            head.add_tail(Node::default());
+            head.add_tail(Node::default());
+            head.add_tail(Node::default());
+            head.add_tail(Node::default());
+
+            update_head(input, &mut head);
+
+            return head.print();
         }
     }
 
-    #[derive(Default)]
+    fn update_head(input: &str, head: &mut Node) {
+        let path = BASEPATH.to_owned() + input;
+        let mut iter = get_lines(&path);
+        while let Some(line) = iter.next() {
+            let content = line.expect("Should be able to read line");
+            let (direction, times) = content
+                .split_once(" ")
+                .expect("String should have one whitespace");
+            let times = times.parse::<u32>().expect("should be able to parse");
+            head.update(direction, times);
+        }
+    }
+
+    #[derive(Default, Clone)]
     pub struct Node {
-        next: Option<Box<Node>>,
+        next: Option<Rc<RefCell<Node>>>,
         pub position: (i32, i32),
         pub visited: HashSet<(i32, i32)>,
     }
 
     impl Node {
         pub fn add_tail(&mut self, tail: Node) {
-            self.next = Some(Box::new(tail));
+            match &self.next {
+                None => self.next = Some(Rc::new(RefCell::new(tail))),
+                Some(tail_ref) => tail_ref.deref().borrow_mut().add_tail(tail),
+            }
         }
 
         pub fn print(&self) -> String {
-            match self.next.as_ref() {
-                Some(tail) => tail.print(),
+            match &self.next {
+                Some(tail_rc) => tail_rc.borrow().print(),
                 None => {
                     return self.visited.len().to_string();
                 }
@@ -68,27 +87,33 @@ pub mod day09 {
             }
         }
 
-        pub fn pull(&mut self) {
-            if let Some(tail) = self.next.as_mut() {
-                let diff_x: i32 = self.position.0 - tail.position.0;
+        pub fn pull(&self) {
+            if let Some(tail_rc) = &self.next {
+                let tail_refcell = tail_rc.deref();
+                let mut tail = tail_refcell.borrow_mut();
+                let mut position = tail.position.clone();
+
+                let diff_x: i32 = self.position.0 - position.0;
                 let a_diff_x = diff_x.abs();
 
-                let diff_y: i32 = self.position.1 - tail.position.1;
+                let diff_y: i32 = self.position.1 - position.1;
                 let a_diff_y = diff_y.abs();
 
                 if a_diff_x > 1 && a_diff_y == 0 {
-                    tail.position.0 += diff_x / a_diff_x;
+                    position.0 += diff_x / a_diff_x;
                 }
 
                 if a_diff_y > 1 && a_diff_x == 0 {
-                    tail.position.1 += diff_y / a_diff_y;
+                    position.1 += diff_y / a_diff_y;
                 }
 
                 if a_diff_x >= 2 && a_diff_y >= 1 || a_diff_y >= 2 && a_diff_x >= 1 {
-                    tail.position.0 += diff_x / a_diff_x;
-                    tail.position.1 += diff_y / a_diff_y;
+                    position.0 += diff_x / a_diff_x;
+                    position.1 += diff_y / a_diff_y;
                 }
-                tail.visited.insert(tail.position);
+                tail.visited.insert(position);
+
+                tail.position = position;
 
                 tail.pull();
             }
@@ -100,20 +125,16 @@ pub mod day09 {
 mod test {
     use crate::day::Solution;
 
-    use super::day09::{Day09, Node};
+    use super::day09::Day09;
     #[test]
     fn test_part_1() {
         let result = Day09.part_1("example.txt");
         assert_eq!(result, "13");
     }
 
-    fn test_update() {
-        let mut head = Node::default();
-        head.update("R", 2);
-        head.update("U", 2);
-        assert_eq!(head.position, (2, 2));
-        head.update("L", 1);
-        head.update("D", 1);
-        assert_eq!(head.position, (1, 1));
+    #[test]
+    fn test_part_2() {
+        let result = Day09.part_2("example.txt");
+        assert_eq!(result, "1");
     }
 }
