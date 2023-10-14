@@ -6,25 +6,16 @@ pub mod day10 {
     pub struct Day10;
 
     pub const BASEPATH: &str = "src/year2022/day10/";
+
     impl Solution for Day10 {
         fn part_1(&self, input: &str) -> String {
-            let path = BASEPATH.to_owned() + input;
-            let mut iter = get_lines(&path);
-            let mut system = System {
-                reg_x: 1,
-                cycle: 1,
-                ..Default::default()
-            };
-            while let Some(line) = iter.next() {
-                let content = line.expect("Should be able to read line");
-                system.execute(&content);
-            }
-
+            let system = execute_system(&input);
             return system.signal.to_string();
         }
 
         fn part_2(&self, input: &str) -> String {
-            return "0".to_string();
+            let system = execute_system(&input);
+            return system.display;
         }
     }
     #[derive(Default)]
@@ -32,6 +23,23 @@ pub mod day10 {
         reg_x: i32,
         cycle: u32,
         signal: i32,
+        display: String,
+    }
+
+    fn execute_system(input: &str) -> System {
+        let path = BASEPATH.to_owned() + input;
+        let mut iter = get_lines(&path);
+        let mut system = System {
+            reg_x: 1,
+            cycle: 1,
+            ..Default::default()
+        };
+        while let Some(line) = iter.next() {
+            let content = line.expect("Should be able to read line");
+            system.execute(&content);
+        }
+
+        system
     }
 
     impl System {
@@ -43,6 +51,11 @@ pub mod day10 {
                     let strength = self.reg_x * self.cycle as i32;
                     self.signal += strength;
                 }
+
+                if (self.cycle - 1) % 40 == 0 {
+                    self.display.push('\n');
+                }
+                self.display.push(self.draw());
                 self.cycle += 1;
             }
 
@@ -50,6 +63,14 @@ pub mod day10 {
                 Command::Addx(x) => self.reg_x += x,
                 Command::Noop => (),
             }
+        }
+
+        fn draw(&self) -> char {
+            let c = (self.cycle - 1) % 40;
+            if c.abs_diff(self.reg_x as u32) < 2 {
+                return '#';
+            }
+            '.'
         }
     }
 
@@ -87,6 +108,7 @@ mod test {
 
     #[test]
     fn test_part_1() {
+        println!("");
         let result = Day10.part_1("example.txt");
         assert_eq!(result, "13140")
     }
