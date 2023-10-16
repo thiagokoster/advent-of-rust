@@ -40,7 +40,34 @@ pub mod day11 {
         }
 
         fn part_2(&self, input: &str) -> String {
-            return "0".to_string();
+            let mut monkeys = parse(input);
+            let rounds = 10_000;
+
+            let common_multiple: u64 = monkeys.iter().map(|m| m.test).product();
+
+            for _ in 0..rounds {
+                for idx in 0..monkeys.len() {
+                    while let Some(mut item) = monkeys[idx].inspect() {
+                        // By using mod of mmc, we can lower the value without affecting the tests.
+                        item = item % common_multiple;
+
+                        let target = monkeys[idx].test(item);
+
+                        //throw
+                        monkeys[target].items.push_back(item);
+                    }
+                }
+            }
+
+            monkeys.sort_unstable_by_key(|f| f.count);
+
+            return monkeys
+                .iter()
+                .rev()
+                .take(2)
+                .map(|m| m.count)
+                .product::<u64>()
+                .to_string();
         }
     }
 
@@ -179,12 +206,18 @@ mod test {
         year2022::day11::day11::{parse_items, Operation},
     };
 
-    use super::day11::{parse, parse_if, parse_operation, Day11};
+    use super::day11::{parse_if, parse_operation, Day11};
 
     #[test]
     fn test_part_1() {
         let result = Day11.part_1("example.txt");
         assert_eq!(result, "10605");
+    }
+
+    #[test]
+    fn test_part_2() {
+        let result = Day11.part_2("example.txt");
+        assert_eq!(result, "2713310158");
     }
 
     #[test]
