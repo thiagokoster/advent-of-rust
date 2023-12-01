@@ -1,9 +1,10 @@
 mod day;
 mod year2022;
+mod year2023;
 
 fn main() {
     println!("Advent of Rust!");
-    for(i, e) in year2022::ALL.iter().enumerate() {
+    for (i, e) in year2023::ALL.iter().enumerate() {
         println!("----------------");
         println!("Day: {}", i + 1);
         let part1 = e.part_1("input.txt");
