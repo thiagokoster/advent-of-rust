@@ -1,4 +1,4 @@
-use std::borrow::BorrowMut;
+use std::{borrow::BorrowMut, cell::RefCell};
 
 use crate::day::Solution;
 use advent_of_rust::read_file;
@@ -19,7 +19,6 @@ struct Cell {
     y: usize,
     symbol: char,
     r#type: CellType,
-    value: Option<u32>,
 }
 
 impl Cell {
@@ -30,7 +29,6 @@ impl Cell {
                 y,
                 symbol: c,
                 r#type: CellType::Empty,
-                value: None,
             };
         }
         if c.is_ascii_digit() {
@@ -39,7 +37,6 @@ impl Cell {
                 y,
                 symbol: c,
                 r#type: CellType::Number,
-                value: None,
             };
         }
 
@@ -48,7 +45,6 @@ impl Cell {
             y,
             symbol: c,
             r#type: CellType::Symbol,
-            value: None,
         }
     }
 
@@ -59,54 +55,112 @@ impl Cell {
         }
     }
 
-    fn is_near_symbol(&self, grid: &Vec<Vec<Cell>>) -> bool {
+    fn is_near_symbol(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> bool {
         match self.r#type {
-            CellType::Number => self.check_neighbour(&grid),
+            CellType::Number => {
+                if self.check_neighbour(&grid) {
+                    return true;
+                }
+
+                let mut i = 1;
+                while self.x + i < grid[0].len()
+                    && grid[self.y][self.x + i].borrow().symbol.is_ascii_digit()
+                {
+                    let right = grid[self.y][self.x + i].borrow();
+                    i += 1;
+                    return right.is_near_symbol(&grid);
+                }
+                false
+            }
             _ => false,
         }
     }
 
-    fn check_neighbour(&self, grid: &Vec<Vec<Cell>>) -> bool {
+    fn check_neighbour(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> bool {
+        // x  y
+        // +1 -1
+
         let x = self.x;
         let y = self.y;
+        // -1 0
         if x > 0 {
-            if grid[y][x - 1].is_symbol() {
+            if grid[y][x - 1].borrow().is_symbol() {
                 return true;
+            }
+
+            // -1 + 1
+            if y < grid.len() - 1 {
+                if grid[y + 1][x - 1].borrow().is_symbol() {
+                    return true;
+                }
             }
         }
 
+        // 0  -1
         if y > 0 {
-            if grid[y - 1][x].is_symbol() {
+            if grid[y - 1][x].borrow().is_symbol() {
                 return true;
+            }
+
+            if x < grid[0].len() - 1 {
+                if grid[y - 1][x + 1].borrow().is_symbol() {
+                    return true;
+                }
             }
         }
 
+        // -1 -1
         if x > 0 && y > 0 {
-            if grid[y - 1][x - 1].is_symbol() {
+            if grid[y - 1][x - 1].borrow().is_symbol() {
                 return true;
             }
         }
 
+        // +1 0
         if x < grid[0].len() - 1 {
-            if grid[y][x + 1].is_symbol() {
+            if grid[y][x + 1].borrow().is_symbol() {
                 return true;
             }
         }
 
+        // 0  +1
         if y < grid.len() - 1 {
-            if grid[y + 1][x].is_symbol() {
+            if grid[y + 1][x].borrow().is_symbol() {
                 return true;
             }
         }
 
+        // +1 +1
         if x < grid[0].len() - 1 && y < grid.len() - 1 {
-            let n = &grid[y + 1][x + 1];
+            let n = &grid[y + 1][x + 1].borrow();
             if n.is_symbol() {
                 return true;
             }
         }
 
         false
+    }
+
+    fn value(&mut self, line: &Vec<RefCell<Cell>>) -> Option<u32> {
+        match self.r#type {
+            CellType::Number => {
+                let mut value = self.symbol.to_string();
+                let mut i = 1;
+
+                if self.x > 0 && !line[self.x - 1].borrow().symbol.is_ascii_digit() || self.x == 0 {
+                    while self.x + i < line.len()
+                        && line[self.x + i].borrow().r#type == CellType::Number
+                    {
+                        let right = &line[self.x + i].borrow();
+                        value.push(right.symbol);
+                        i += 1;
+                    }
+                    return Some(value.parse::<u32>().unwrap());
+                }
+                None
+            }
+            _ => None,
+        }
     }
 }
 
@@ -116,15 +170,23 @@ impl Solution for Day03 {
         let lines = read_file(&path);
 
         let grid = parse_input(&lines);
+        initialize(&grid);
         println!("GRID: {} x {}", grid[0].len(), grid.len());
+
+        let mut result = 0;
 
         for row in grid.iter() {
             for cell in row {
-                print!("{}", cell.symbol,);
+                if cell.borrow().is_near_symbol(&grid) {
+                    if let Some(value) = cell.borrow_mut().value(row) {
+                        result += value;
+                        println!("Value: {}", value);
+                    }
+                }
             }
             println!("");
         }
-        "".to_string()
+        result.to_string()
     }
 
     fn part_2(&self, input: &str) -> String {
@@ -132,13 +194,13 @@ impl Solution for Day03 {
     }
 }
 
-fn parse_input(lines: &Vec<String>) -> Vec<Vec<Cell>> {
-    let mut grid: Vec<Vec<Cell>> = Vec::new();
+fn parse_input(lines: &Vec<String>) -> Vec<Vec<RefCell<Cell>>> {
+    let mut grid: Vec<Vec<RefCell<Cell>>> = Vec::new();
     for (y, line) in lines.iter().enumerate() {
         grid.push(
             line.chars()
                 .enumerate()
-                .map(|(x, c)| Cell::from_char(c, x, y))
+                .map(|(x, c)| RefCell::new(Cell::from_char(c, x, y)))
                 .collect(),
         );
     }
@@ -146,30 +208,11 @@ fn parse_input(lines: &Vec<String>) -> Vec<Vec<Cell>> {
     grid
 }
 
-fn get_values(grid: &mut Vec<Vec<Cell>>, width: usize) {
-    for row in grid.iter_mut() {
-        for cell in row.iter_mut() {
-            if cell.r#type == CellType::Number {
-                let mut value = String::new();
-                value.push(cell.symbol);
-                if cell.x < width - 1 {
-                    let offset = 1;
-                    let right = grid[cell.y][cell.x + offset];
-                    while cell.x + offset < width && right.r#type == CellType::Number {
-                        value.push(right.symbol);
-                    }
-
-                    (*cell).value = Some(value.parse::<u32>().unwrap());
-                }
-            }
-        }
-    }
-}
-
-fn initialize(grid: &Vec<Vec<Cell>>) {
+fn initialize(grid: &Vec<Vec<RefCell<Cell>>>) {
     for row in grid.iter() {
-        for cell in row.iter() {
-            cell.is_near_symbol(&grid);
+        for cell in row {
+            let cell = cell.borrow();
+            cell.is_near_symbol(grid);
         }
     }
 }
@@ -181,6 +224,7 @@ mod tests {
     fn test_part_1() {
         let day = Day03 {};
 
-        day.part_1("example.txt");
+        let result = day.part_1("example.txt");
+        assert_eq!(result, "4361");
     }
 }
