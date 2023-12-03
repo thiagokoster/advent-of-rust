@@ -105,6 +105,7 @@ mod tests {
         assert_eq!(day02.part_1("example.txt"), "8");
     }
 
+    #[test]
     fn test_part_2() {
         let day02 = Day02 {};
         assert_eq!(day02.part_2("example.txt"), "2286");
