@@ -10,6 +10,7 @@ pub const BASEPATH: &str = "src/year2023/day04/";
 struct Card {
     winning_numbers: HashSet<u16>,
     numbers: HashSet<u16>,
+    matching_numbers: u32,
     points: u32,
 }
 
@@ -19,8 +20,6 @@ impl Card {
         let line = &line[colon_index + 1..].trim();
 
         let line = line.replace("  ", " ");
-        println!("Line: {}", line);
-
         let (left, right) = line.split_once(" | ").expect("line should contain a '|'");
 
         let winning_numbers: HashSet<u16> =
@@ -30,16 +29,21 @@ impl Card {
             .map(|x| x.parse::<u16>().unwrap())
             .collect();
 
-        let hits: u32 = winning_numbers
+        let matching_numbers: u32 = winning_numbers
             .intersection(&numbers)
             .count()
             .try_into()
             .unwrap();
-        let points = if hits > 0 { 2u32.pow(hits - 1) } else { 0 };
+        let points = if matching_numbers > 0 {
+            2u32.pow(matching_numbers - 1)
+        } else {
+            0
+        };
 
         Self {
             winning_numbers,
             numbers,
+            matching_numbers,
             points,
         }
     }
@@ -60,7 +64,34 @@ impl Solution for Day04 {
     }
 
     fn part_2(&self, input: &str) -> String {
-        "".to_string()
+        let path = BASEPATH.to_owned() + input;
+        let lines = read_file(&path);
+        let mut cards: Vec<(usize, Card)> = Vec::new();
+
+        // Populate the card list
+        for line in lines.iter() {
+            let card = Card::from_str(&line);
+            cards.push((1, card));
+        }
+
+        // Iterate over the cards
+        for i in 0..cards.len() {
+            for n in 1..=cards[i].0 {
+                let new_copies: usize = cards[i].1.matching_numbers.try_into().unwrap();
+                if new_copies == 0 {
+                    continue;
+                }
+
+                for j in 1..=new_copies {
+                    if i + j < cards.len() {
+                        cards[i + j].0 += 1;
+                    }
+                }
+            }
+        }
+
+        let sum: usize = cards.iter().map(|set| set.0).sum();
+        sum.to_string()
     }
 }
 
@@ -73,5 +104,12 @@ mod tests {
         let day = Day04 {};
         let result = day.part_1("example.txt");
         assert_eq!(result, "13");
+    }
+
+    #[test]
+    fn test_part_2() {
+        let day = Day04 {};
+        let result = day.part_2("example.txt");
+        assert_eq!(result, "30");
     }
 }
