@@ -1,4 +1,4 @@
-use std::{borrow::BorrowMut, cell::RefCell};
+use std::cell::RefCell;
 
 use crate::day::Solution;
 use advent_of_rust::read_file;
@@ -6,14 +6,15 @@ use advent_of_rust::read_file;
 pub struct Day03;
 pub const BASEPATH: &str = "src/year2023/day03/";
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum CellType {
     Empty,
     Number,
     Symbol,
+    Gear,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Cell {
     x: usize,
     y: usize,
@@ -22,35 +23,47 @@ struct Cell {
 }
 
 impl Cell {
+    fn clone(&self) -> Self {
+        Cell {
+            x: self.x,
+            y: self.y,
+            symbol: self.symbol,
+            r#type: self.r#type,
+        }
+    }
     fn from_char(c: char, x: usize, y: usize) -> Self {
-        if c == '.' {
-            return Cell {
+        match c {
+            '.' => Cell {
                 x,
                 y,
                 symbol: c,
                 r#type: CellType::Empty,
-            };
-        }
-        if c.is_ascii_digit() {
-            return Cell {
+            },
+            '0'..='9' => Cell {
                 x,
                 y,
                 symbol: c,
                 r#type: CellType::Number,
-            };
-        }
-
-        Cell {
-            x,
-            y,
-            symbol: c,
-            r#type: CellType::Symbol,
+            },
+            '*' => Cell {
+                x,
+                y,
+                symbol: c,
+                r#type: CellType::Gear,
+            },
+            _ => Cell {
+                x,
+                y,
+                symbol: c,
+                r#type: CellType::Symbol,
+            },
         }
     }
 
     fn is_symbol(&self) -> bool {
         match self.r#type {
             CellType::Symbol => true,
+            CellType::Gear => true,
             _ => false,
         }
     }
@@ -76,69 +89,55 @@ impl Cell {
         }
     }
 
-    fn check_neighbour(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> bool {
-        // x  y
-        // +1 -1
-
+    fn get_neighbours(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> Vec<Cell> {
         let x = self.x;
         let y = self.y;
-        // -1 0
-        if x > 0 {
-            if grid[y][x - 1].borrow().is_symbol() {
-                return true;
-            }
+        let mut neighbours: Vec<Cell> = Vec::new();
 
-            // -1 + 1
+        if x > 0 {
+            neighbours.push(grid[y][x - 1].borrow().clone());
+
             if y < grid.len() - 1 {
-                if grid[y + 1][x - 1].borrow().is_symbol() {
-                    return true;
-                }
+                neighbours.push(grid[y + 1][x - 1].borrow().clone());
             }
         }
 
         // 0  -1
         if y > 0 {
-            if grid[y - 1][x].borrow().is_symbol() {
-                return true;
-            }
+            neighbours.push(grid[y - 1][x].borrow().clone());
 
             if x < grid[0].len() - 1 {
-                if grid[y - 1][x + 1].borrow().is_symbol() {
-                    return true;
-                }
+                neighbours.push(grid[y - 1][x + 1].borrow().clone());
             }
         }
 
         // -1 -1
         if x > 0 && y > 0 {
-            if grid[y - 1][x - 1].borrow().is_symbol() {
-                return true;
-            }
+            neighbours.push(grid[y - 1][x - 1].borrow().clone());
         }
 
         // +1 0
         if x < grid[0].len() - 1 {
-            if grid[y][x + 1].borrow().is_symbol() {
-                return true;
-            }
+            neighbours.push(grid[y][x + 1].borrow().clone());
         }
 
         // 0  +1
         if y < grid.len() - 1 {
-            if grid[y + 1][x].borrow().is_symbol() {
-                return true;
-            }
+            neighbours.push(grid[y + 1][x].borrow().clone());
         }
 
         // +1 +1
         if x < grid[0].len() - 1 && y < grid.len() - 1 {
-            let n = &grid[y + 1][x + 1].borrow();
-            if n.is_symbol() {
-                return true;
-            }
+            neighbours.push(grid[y + 1][x + 1].borrow().clone());
         }
 
-        false
+        neighbours
+    }
+
+    fn check_neighbour(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> bool {
+        let neighbours = self.get_neighbours(grid);
+        let symbol_neighbour = neighbours.iter().find(|n| n.is_symbol());
+        symbol_neighbour.is_some()
     }
 
     fn value(&mut self, line: &Vec<RefCell<Cell>>) -> Option<u32> {
@@ -162,6 +161,14 @@ impl Cell {
             _ => None,
         }
     }
+
+    fn gear_ratio(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> Option<u32> {
+        if self.r#type != CellType::Gear {
+            return None;
+        }
+
+        Some(1)
+    }
 }
 
 impl Solution for Day03 {
@@ -180,7 +187,6 @@ impl Solution for Day03 {
                 if cell.borrow().is_near_symbol(&grid) {
                     if let Some(value) = cell.borrow_mut().value(row) {
                         result += value;
-                        println!("Value: {}", value);
                     }
                 }
             }
@@ -190,6 +196,11 @@ impl Solution for Day03 {
     }
 
     fn part_2(&self, input: &str) -> String {
+        let path = BASEPATH.to_owned() + input;
+        let lines = read_file(&path);
+
+        let grid = parse_input(&lines);
+        initialize(&grid);
         "".to_string()
     }
 }
@@ -226,5 +237,13 @@ mod tests {
 
         let result = day.part_1("example.txt");
         assert_eq!(result, "4361");
+    }
+
+    #[test]
+    fn test_part_2() {
+        let day = Day03 {};
+
+        let result = day.part_2("example.txt");
+        assert_eq!(result, "467835");
     }
 }
