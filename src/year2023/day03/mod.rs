@@ -167,6 +167,10 @@ impl Cell {
             return None;
         }
 
+        let neighbours = self.get_neighbours(grid);
+        let parts = neighbours.iter().filter(|n| n.is_near_symbol(grid)).count();
+        println!("Gear at: ({},{}) has {} parts", self.x, self.y, parts);
+
         Some(1)
     }
 }
@@ -201,6 +205,12 @@ impl Solution for Day03 {
 
         let grid = parse_input(&lines);
         initialize(&grid);
+        for row in grid.iter() {
+            for cell in row {
+                let cell = cell.borrow();
+                cell.gear_ratio(&grid);
+            }
+        }
         "".to_string()
     }
 }
