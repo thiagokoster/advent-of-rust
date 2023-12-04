@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::collections::HashSet;
 
 use crate::day::Solution;
 use advent_of_rust::read_file;
@@ -68,7 +68,7 @@ impl Cell {
         }
     }
 
-    fn is_near_symbol(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> bool {
+    fn is_near_symbol(&self, grid: &Vec<Vec<Cell>>) -> bool {
         match self.r#type {
             CellType::Number => {
                 if self.check_neighbour(&grid) {
@@ -76,10 +76,9 @@ impl Cell {
                 }
 
                 let mut i = 1;
-                while self.x + i < grid[0].len()
-                    && grid[self.y][self.x + i].borrow().symbol.is_ascii_digit()
+                while self.x + i < grid[0].len() && grid[self.y][self.x + i].symbol.is_ascii_digit()
                 {
-                    let right = grid[self.y][self.x + i].borrow();
+                    let right = &grid[self.y][self.x + i];
                     i += 1;
                     return right.is_near_symbol(&grid);
                 }
@@ -89,89 +88,100 @@ impl Cell {
         }
     }
 
-    fn get_neighbours(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> Vec<Cell> {
+    fn get_neighbours(&self, grid: &Vec<Vec<Cell>>) -> Vec<Cell> {
         let x = self.x;
         let y = self.y;
         let mut neighbours: Vec<Cell> = Vec::new();
 
         if x > 0 {
-            neighbours.push(grid[y][x - 1].borrow().clone());
+            neighbours.push(grid[y][x - 1].clone());
 
             if y < grid.len() - 1 {
-                neighbours.push(grid[y + 1][x - 1].borrow().clone());
+                neighbours.push(grid[y + 1][x - 1].clone());
             }
         }
 
         // 0  -1
         if y > 0 {
-            neighbours.push(grid[y - 1][x].borrow().clone());
+            neighbours.push(grid[y - 1][x].clone());
 
             if x < grid[0].len() - 1 {
-                neighbours.push(grid[y - 1][x + 1].borrow().clone());
+                neighbours.push(grid[y - 1][x + 1].clone());
             }
         }
 
         // -1 -1
         if x > 0 && y > 0 {
-            neighbours.push(grid[y - 1][x - 1].borrow().clone());
+            neighbours.push(grid[y - 1][x - 1].clone());
         }
 
         // +1 0
         if x < grid[0].len() - 1 {
-            neighbours.push(grid[y][x + 1].borrow().clone());
+            neighbours.push(grid[y][x + 1].clone());
         }
 
         // 0  +1
         if y < grid.len() - 1 {
-            neighbours.push(grid[y + 1][x].borrow().clone());
+            neighbours.push(grid[y + 1][x].clone());
         }
 
         // +1 +1
         if x < grid[0].len() - 1 && y < grid.len() - 1 {
-            neighbours.push(grid[y + 1][x + 1].borrow().clone());
+            neighbours.push(grid[y + 1][x + 1].clone());
         }
 
         neighbours
     }
 
-    fn check_neighbour(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> bool {
+    fn check_neighbour(&self, grid: &Vec<Vec<Cell>>) -> bool {
         let neighbours = self.get_neighbours(grid);
         let symbol_neighbour = neighbours.iter().find(|n| n.is_symbol());
         symbol_neighbour.is_some()
     }
 
-    fn value(&mut self, line: &Vec<RefCell<Cell>>) -> Option<u32> {
+    fn value(&self, line: &Vec<Cell>) -> Option<u32> {
         match self.r#type {
             CellType::Number => {
-                let mut value = self.symbol.to_string();
-                let mut i = 1;
+                let mut start = self.x;
+                let mut end = self.x;
+                let mut value = String::new();
 
-                if self.x > 0 && !line[self.x - 1].borrow().symbol.is_ascii_digit() || self.x == 0 {
-                    while self.x + i < line.len()
-                        && line[self.x + i].borrow().r#type == CellType::Number
-                    {
-                        let right = &line[self.x + i].borrow();
-                        value.push(right.symbol);
-                        i += 1;
-                    }
-                    return Some(value.parse::<u32>().unwrap());
+                // going backwards to find the start of the number
+                while start > 0 && line[start - 1].r#type == CellType::Number {
+                    start -= 1;
                 }
-                None
+
+                // going forward to find the end of the number
+                while end < line.len() - 1 && line[end + 1].r#type == CellType::Number {
+                    end += 1;
+                }
+
+                for index in start..=end {
+                    value.push(line[index].symbol.clone());
+                }
+
+                Some(value.parse::<u32>().unwrap())
             }
             _ => None,
         }
     }
 
-    fn gear_ratio(&self, grid: &Vec<Vec<RefCell<Cell>>>) -> Option<u32> {
+    fn gear_ratio(&self, grid: &Vec<Vec<Cell>>) -> Option<u32> {
         if self.r#type != CellType::Gear {
             return None;
         }
 
         let neighbours = self.get_neighbours(grid);
-        let parts = neighbours.iter().filter(|n| n.is_near_symbol(grid)).count();
-        println!("Gear at: ({},{}) has {} parts", self.x, self.y, parts);
+        let parts: HashSet<u32> = neighbours
+            .iter()
+            .filter(|n| n.is_near_symbol(grid))
+            .map(|n| n.value(&grid[n.y]).unwrap())
+            .collect();
 
-        Some(1)
+        if parts.len() == 2 {
+            return Some(parts.iter().product());
+        }
+        None
     }
 }
 
@@ -184,44 +194,45 @@ impl Solution for Day03 {
         initialize(&grid);
         println!("GRID: {} x {}", grid[0].len(), grid.len());
 
-        let mut result = 0;
+        let mut values: HashSet<u32> = HashSet::new();
 
         for row in grid.iter() {
             for cell in row {
-                if cell.borrow().is_near_symbol(&grid) {
-                    if let Some(value) = cell.borrow_mut().value(row) {
-                        result += value;
+                if cell.is_near_symbol(&grid) {
+                    if let Some(value) = cell.value(row) {
+                        values.insert(value);
                     }
                 }
             }
-            println!("");
         }
-        result.to_string()
+        values.iter().sum::<u32>().to_string()
     }
 
     fn part_2(&self, input: &str) -> String {
         let path = BASEPATH.to_owned() + input;
         let lines = read_file(&path);
+        let mut result = 0;
 
         let grid = parse_input(&lines);
         initialize(&grid);
         for row in grid.iter() {
             for cell in row {
-                let cell = cell.borrow();
-                cell.gear_ratio(&grid);
+                if let Some(ratio) = cell.gear_ratio(&grid) {
+                    result += ratio;
+                }
             }
         }
-        "".to_string()
+        result.to_string()
     }
 }
 
-fn parse_input(lines: &Vec<String>) -> Vec<Vec<RefCell<Cell>>> {
-    let mut grid: Vec<Vec<RefCell<Cell>>> = Vec::new();
+fn parse_input(lines: &Vec<String>) -> Vec<Vec<Cell>> {
+    let mut grid: Vec<Vec<Cell>> = Vec::new();
     for (y, line) in lines.iter().enumerate() {
         grid.push(
             line.chars()
                 .enumerate()
-                .map(|(x, c)| RefCell::new(Cell::from_char(c, x, y)))
+                .map(|(x, c)| Cell::from_char(c, x, y))
                 .collect(),
         );
     }
@@ -229,10 +240,9 @@ fn parse_input(lines: &Vec<String>) -> Vec<Vec<RefCell<Cell>>> {
     grid
 }
 
-fn initialize(grid: &Vec<Vec<RefCell<Cell>>>) {
+fn initialize(grid: &Vec<Vec<Cell>>) {
     for row in grid.iter() {
         for cell in row {
-            let cell = cell.borrow();
             cell.is_near_symbol(grid);
         }
     }
