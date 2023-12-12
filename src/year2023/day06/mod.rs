@@ -40,10 +40,10 @@ impl Race {
         let c: f64 = self.distance as f64;
 
         let root1 = (b - (b.powf(2f64) - 4f64 * c).powf(1.0 / 2.0)) / 2.0;
-        let root2 = (b + (b.powf(2f64) - 4f64 * c).powf(1.0 / 2.0)) / 2.0;
+        let root = (b + (b.powf(2f64) - 4f64 * c).powf(1.0 / 2.0)) / 2.0;
 
         let start = root1.floor() as u64 + 1;
-        let end = root2.ceil() as u64;
+        let end = root.ceil() as u64;
         (start..end).count()
     }
 }
